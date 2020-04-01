@@ -1,0 +1,243 @@
+ansible_pull_logs:
+  -
+    git_success: False
+    success: False
+    runtime: 10
+    log: |
+      Starting Ansible Pull at 2016-03-23 22:49:01
+      /usr/local/bin/ansible-pull --inventory localhost, --directory /var/lib/ansible/local --url git@bitbucket.org:tunnelbear/opscode.git --vault-password-file /var/lib/ansible/vault_pass.txt --checkout staging-iptables-auditing --accept-host-key playbooks/vpn.yaml
+      localhost | FAILED! => {
+          "changed": false,
+          "failed": true,
+          "msg": "Failed to checkout some-branch"
+      }
+
+    summary: |
+      Git failed!: Message: "Failed to checkout some-branch"
+      Runtime: 0:00:10
+  -
+    git_success: True
+    success: False
+    runtime: 300
+    log: |
+      Starting Ansible Pull at 2016-03-23 22:49:01
+      /usr/local/bin/ansible-pull --inventory localhost, --directory /var/lib/ansible/local --url git@bitbucket.org:tunnelbear/opscode.git --vault-password-file /var/lib/ansible/vault_pass.txt --checkout staging-iptables-auditing --accept-host-key playbooks/vpn.yaml
+      localhost | SUCCESS => {
+          "after": "3ac4dbd946a19c42f97acc22c8c73badf84c15c0",
+          "before": "3ac4dbd946a19c42f97acc22c8c73badf84c15c0",
+          "changed": false
+      }
+
+      ... snip ...
+
+      TASK [hosts-file : Insert into /etc/hosts: "{{ item.line }}"] ******************
+      fatal: [localhost]: FAILED! => {"failed": true, "msg": "ERROR! 'publicip' is undefined"}
+
+      PLAY RECAP *********************************************************************
+      localhost                  : ok=2    changed=0    unreachable=0    failed=1
+
+    summary: |
+      Play failed!: [hosts-file : Insert into /etc/hosts: "{{ item.line }}"], Message: "ERROR! 'publicip' is undefined"
+      Play Recap: [localhost] ok: 2, changed: 0, unreachable: 0, failed: 1
+      Runtime: 0:05:00
+
+  -
+    git_success: True
+    success: True
+    runtime: 300
+
+    log: |
+      Starting Ansible Pull at 2016-03-23 22:49:01
+      /usr/local/bin/ansible-pull --inventory localhost, --directory /var/lib/ansible/local --url git@bitbucket.org:tunnelbear/opscode.git --vault-password-file /var/lib/ansible/vault_pass.txt --checkout staging-iptables-auditing --accept-host-key playbooks/vpn.yaml
+      localhost | SUCCESS => {
+          "after": "3ac4dbd946a19c42f97acc22c8c73badf84c15c0",
+          "before": "3ac4dbd946a19c42f97acc22c8c73badf84c15c0",
+          "changed": false
+      }
+
+      ... snip ...
+
+      RUNNING HANDLER [peerguardian : peerguardian restart] **************************
+      changed: [localhost]
+
+      PLAY RECAP *********************************************************************
+      localhost                  : ok=394  changed=56   unreachable=0    failed=0
+
+    summary: |
+      Play Recap: [localhost] ok: 394, changed: 56, unreachable: 0, failed: 0
+      Runtime: 0:05:00
+
+  -
+    git_success: True
+    success: False
+    runtime: 15
+
+    log: |
+      Starting Ansible Pull at 2016-03-24 01:40:03
+      /usr/local/Cellar/ansible/2.0.1.0/libexec/bin/ansible-pull --inventory localhost, --directory /tmp/ansible-pull --url git@bitbucket.org:tunnelbear/opscode.git --vault-password-file /Users/nhooey/git/tunnelbear/opscode/playbooks/roles/ansible-pull/files/vault_pass.txt --checkout master --accept-host-key playbooks/developer.yaml
+      localhost | SUCCESS => {
+          "after": "e520082269c4e5afb87154b37ebadf6d5ed869e6",
+          "before": "e520082269c4e5afb87154b37ebadf6d5ed869e6",
+          "changed": false
+      }
+
+      PLAY [Provision a developer machine] *******************************************
+
+      TASK [setup] *******************************************************************
+      fatal: [localhost]: FAILED! => {"changed": false, "failed": true, "module_stderr": "sudo: a password is required", "module_stdout": "", "msg": "MODULE FAILURE", "parsed": false}
+
+      NO MORE HOSTS LEFT *************************************************************
+
+      PLAY RECAP *********************************************************************
+      localhost                  : ok=0    changed=0    unreachable=0    failed=1
+
+    summary: |
+      Play failed!: [setup], Message: "MODULE FAILURE", Module STDERR: "sudo: a password is required"
+      Play Recap: [localhost] ok: 0, changed: 0, unreachable: 0, failed: 1
+      Runtime: 0:00:15
+
+  -
+    git_success: True
+    success: True
+    runtime: 45
+
+    log: |
+      TASK [make sure supervisor started] ********************************************
+      ok: [localhost]
+
+      TASK [make sure nginx is stopped] **********************************************
+      fatal: [localhost]: FAILED! => {"changed": false, "failed": true, "msg": "systemd could not find the requested service \"'nginx'\": "}
+      ...ignoring
+
+      TASK [force iptables reload again] *********************************************
+      skipping: [localhost]
+
+      RUNNING HANDLER [ssh : Restart SSH daemon] *************************************
+      changed: [localhost]
+
+      PLAY RECAP *********************************************************************
+      localhost                  : ok=390  changed=59   unreachable=0    failed=0
+
+    summary: |
+      Play Recap: [localhost] ok: 390, changed: 59, unreachable: 0, failed: 0
+      Runtime: 0:00:45
+
+  -
+    git_success: True
+    success: False
+    runtime: 45
+
+    log: |
+      Starting Ansible Pull at 2016-03-29 14:04:01
+      /usr/local/bin/ansible-pull --inventory localhost, --directory /var/lib/ansible/local --url git@bitbucket.org:tunnelbear/opscode.git --vault-password-file /var/lib/ansible/vault_pass.txt --checkout staging-rewrite-ansible-pull-script --accept-host-key playbooks/sensu-server.yaml
+      localhost | SUCCESS => {
+          "after": "4b3c0a894c257080eb51e1cb66b1879e571f7206",
+          "before": "4b3c0a894c257080eb51e1cb66b1879e571f7206",
+          "changed": false
+      }
+
+      PLAY [Install Sensu server] ****************************************************
+
+      TASK [setup] *******************************************************************
+      ok: [localhost]
+
+      TASK [python3-pip : Remove Python 3 Apt installation] **************************
+      ok: [localhost]
+
+      TASK [python3-pip : Install Python essentials (Debian/Ubuntu)] *****************
+      failed: [localhost] => (item=[u'python3-setuptools', u'python3-dev', u'build-essential', u'ca-certificates']) => {"failed": true, "item": ["python3-setuptools", "python3-dev", "build-essential", "ca-certificates"], "msg": "Could not fetch updated apt files"}
+      TASK: python2-pip : Install Python essentials (Debian/Ubuntu) ----------- 7.53s
+      TASK: python3-pip : Install Python essentials (Debian/Ubuntu) ----------- 6.18s
+      TASK: python2-pip : Upgrade Pip ----------------------------------------- 1.74s
+      TASK: setup ------------------------------------------------------------- 1.68s
+      TASK: users : copy ssh key ---------------------------------------------- 1.42s
+      TASK: users : make ssh key directory ------------------------------------ 1.41s
+      TASK: users : add users ------------------------------------------------- 1.40s
+      TASK: users : grant sudo access ----------------------------------------- 1.30s
+      TASK: ansible : Install Ansible ----------------------------------------- 1.27s
+      TASK: ansible : Install Jinja2 to make ansible-pull actually work ------- 1.25s
+
+      Playbook finished: Tue Mar 29 14:15:12 2016, 99 total tasks.  0:00:52 elapsed.
+
+
+      PLAY RECAP *********************************************************************
+      localhost                  : ok=75   changed=17   unreachable=0    failed=1
+
+    summary: |
+      Play failed!: [python3-pip : Install Python essentials (Debian/Ubuntu)], Message: "Could not fetch updated apt files"
+      Play Recap: [localhost] ok: 75, changed: 17, unreachable: 0, failed: 1
+      Runtime: 0:00:45
+
+  -
+    git_success: True
+    success: False
+    runtime: 45
+
+    log: |
+      Starting Ansible Pull at 2016-03-29 14:04:01
+      /usr/local/bin/ansible-pull --inventory localhost, --directory /var/lib/ansible/local --url git@bitbucket.org:tunnelbear/opscode.git --vault-password-file /var/lib/ansible/vault_pass.txt --checkout staging-rewrite-ansible-pull-script --accept-host-key playbooks/sensu-server.yaml
+      localhost | SUCCESS => {
+          "after": "4b3c0a894c257080eb51e1cb66b1879e571f7206",
+          "before": "4b3c0a894c257080eb51e1cb66b1879e571f7206",
+          "changed": false
+      }
+
+      TASK [Mayeu.rabbitmq : add rabbitmq vhost] *************************************
+      failed: [localhost] => (item={u'name': u'/sensu'}) => {"cmd": "/usr/sbin/rabbitmqctl -q -n rabbit list_vhosts name tracing", "failed": true, "item": {"name": "/sensu"}, "msg": "Error:********@prod-sensu01'\n- home dir: /var/lib/rabbitmq\n- cookie hash: aAVKgiOmyb8pstvtSkHbFQ==", "rc": 69, "stderr": "Error: unable to connect to node 'rabbit@prod-sensu01': nodedown\n\nDIAGNOSTICS\n===========\n\nattempted to contact: ['rabbit@prod-sensu01']\n\nrabbit@prod-sensu01:\n  * connected to epmd (port 4369) on prod-sensu01\n  * epmd reports: node 'rabbit' not running at all\n                  no other nodes on prod-sensu01\n  * suggestion: start the node\n\ncurrent node details:\n- node name: 'rabbitmq-cli-99@prod-sensu01'\n- home dir: /var/lib/rabbitmq\n- cookie hash: aAVKgiOmyb8pstvtSkHbFQ==\n\n", "stdout": "", "stdout_lines": []}
+
+      PLAY RECAP *********************************************************************
+      localhost                  : ok=75   changed=17   unreachable=0    failed=1
+
+    summary: |
+      Play failed!: [Mayeu.rabbitmq : add rabbitmq vhost], Message: "Error:********@prod-sensu01'\n- home dir: /var/lib/rabbitmq\n- cookie hash: aAVKgiOmyb8pstvtSkHbFQ=="
+      Play Recap: [localhost] ok: 75, changed: 17, unreachable: 0, failed: 1
+      Runtime: 0:00:45
+
+  -
+    git_success: False
+    success: False
+    runtime: 12
+
+    log: |
+      Starting Ansible Pull at 2016-03-30 20:34:14
+      /usr/local/bin/ansible-pull --inventory localhost, --directory /var/lib/ansible/local --url git@bitbucket.org:tunnelbear/opscode.git --vault-password-file /var/lib/ansible/vault_pas
+      --accept-host-key playbooks/vpn.yaml
+      localhost | FAILED! => {
+          "changed": false,
+          "failed": true,
+          "msg": "Failed to download remote objects and refs:  fatal: Couldn't find remote ref refs/heads/remote-branch\nfatal: The remote end hung up unexpectedly\n"
+      }
+
+    summary: |
+      Git failed!: Message: "Failed to download remote objects and refs:  fatal: Couldn't find remote ref refs/heads/remote-branch\nfatal: The remote end hung up unexpectedly\n"
+      Runtime: 0:00:12
+
+  -
+    git_success: True
+    success: False
+    runtime: 25
+
+    log: |
+      Starting Ansible Pull at 2016-03-23 22:49:01
+      /usr/local/bin/ansible-pull --inventory localhost, --directory /var/lib/ansible/local --url git@bitbucket.org:tunnelbear/opscode.git --vault-password-file /var/lib/ansible/vault_pass.txt --checkout staging-iptables-auditing --accept-host-key playbooks/vpn.yaml
+      localhost | SUCCESS => {
+          "after": "3ac4dbd946a19c42f97acc22c8c73badf84c15c0",
+          "before": "3ac4dbd946a19c42f97acc22c8c73badf84c15c0",
+          "changed": false
+      }
+
+      ... snip ...
+
+      TASK [supervisor : install supervisor] *****************************************
+      An exception occurred during task execution. To see the full traceback, use -vvv. The error was: SystemError: E:Could not open file /var/lib/apt/lists/security.ubuntu.com_ubuntu_dists_vivid-security_main_binary-amd64_Packages - open (2: No such file or directory)
+      fatal: [localhost]: FAILED! => {"changed": false, "failed": true, "parsed": false}
+
+      RUNNING HANDLER [ssh : Restart SSH daemon] *************************************
+
+      PLAY RECAP *********************************************************************
+      localhost                  : ok=2    changed=0    unreachable=0    failed=1
+
+    summary: |
+      Play failed!: [supervisor : install supervisor], Exception: "SystemError: E:Could not open file /var/lib/apt/lists/security.ubuntu.com_ubuntu_dists_vivid-security_main_binary-amd64_Packages - open (2: No such file or directory)"
+      Play Recap: [localhost] ok: 2, changed: 0, unreachable: 0, failed: 1
+      Runtime: 0:00:25

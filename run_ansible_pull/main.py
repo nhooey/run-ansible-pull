@@ -8,8 +8,8 @@ import shutil
 import sys
 
 from datetime import timedelta
+from multiprocessing import Process
 from tendo.singleton import SingleInstance, SingleInstanceException
-from threading import Thread
 from queue import Queue, Empty
 
 from run_ansible_pull.ansible import get_ansible_cmd, get_ansible_result
@@ -60,7 +60,7 @@ def run():
 
     while first_run or try_again:
         try_again = False
-        process = None
+        ansible_process = None
         start_time = time.time()
 
         try:
@@ -73,27 +73,60 @@ def run():
                 git_branch,
             )
             logger.info("Running Ansible command: %s", " ".join(ansible_cmd))
-            process = subprocess.Popen(
+            ansible_process = subprocess.Popen(
                 ansible_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
             )
-            logger.info("Started Ansible process with PID: %s", process.pid)
-
-            def ansible_running():
-                return process.poll() is None
-
-            def timeout_reached():
-                return time.time() - start_time > args.timeout
+            logger.info("Started Ansible process with PID: %s", ansible_process.pid)
 
             queue = Queue()
-            logger_thread = Thread(target=enqueue_output, args=(process.stdout, queue))
-            logger_thread.daemon = True
-            logger_thread.start()
-
-            one_more_time = iter([True] * 20 + [False])
+            logger_process = Process(target=enqueue_output, args=(ansible_process.stdout, queue))
+            logger_process.start()
 
             ansible_output = ""
 
-            while (ansible_running() and not timeout_reached()) or next(one_more_time):
+            class LoopEnder:
+                def __init__(self, _process, _start_time, _timeout):
+                    self._state_ansible_running = None
+                    self._state_time_elapsed = None
+                    self._state_remainder = None
+                    self._counter_remainder = list([True] * 20 + [False])
+                    self._process = _process
+                    self._start_time = _start_time
+                    self._timeout = _timeout
+
+                def keep_going(self):
+                    keep_going = (
+                        self._ansible_running() and not self._timeout_reached()
+                    ) or self._remainder()
+                    logger.debug("Keep going: %s", self)
+                    return keep_going
+
+                def __str__(self):
+                    return ", ".join(
+                        [
+                            f"start time: {self._start_time}",
+                            f"timeout: {self._timeout}",
+                            f"ansible running: {self._state_ansible_running}",
+                            f"time remaining: {self._timeout - self._state_time_elapsed}",
+                            f"remainder count: {len(list(filter(None, self._counter_remainder)))}",
+                        ]
+                    )
+
+                def _ansible_running(self):
+                    self._state_ansible_running = self._process.poll() is None
+                    return self._state_ansible_running
+
+                def _timeout_reached(self):
+                    self._state_time_elapsed = time.time() - self._start_time
+                    return self._state_time_elapsed > self._timeout
+
+                def _remainder(self):
+                    self._state_remainder = self._counter_remainder.pop(0)
+                    return self._state_remainder
+
+            loop_ender = LoopEnder(ansible_process, start_time, args.timeout)
+
+            while loop_ender.keep_going():
                 line = None
                 try:
                     line = queue.get(block=False)
@@ -110,28 +143,28 @@ def run():
                     time.sleep(0.1)
 
             try:
-                return_code = process.wait(0)
+                return_code = ansible_process.wait(0)
             except subprocess.TimeoutExpired:
                 return_code = None
 
         except ShutdownException as e:
-            logger.error("Ansible Pull result: Interrupted. PID[%s]", process.pid)
-            kill_softly(process)
+            logger.error("Ansible Pull result: Interrupted. PID[%s]", ansible_process.pid)
+            kill_softly(ansible_process)
             sys.exit(e.signal)
         else:
             if return_code is None:
                 logger.error(
                     "Ansible Pull result: Timeout (%s seconds). PID[%s]",
                     args.timeout,
-                    process.pid,
+                    ansible_process.pid,
                 )
-                kill_softly(process)
+                kill_softly(ansible_process)
             else:
                 logger.info(
                     "Ansible Pull result: %s. PID[%s]. Return code: %s",
                     "Success" if return_code == 0 else "Failed",
-                    process.pid,
-                    process.returncode,
+                    ansible_process.pid,
+                    ansible_process.returncode,
                 )
         finally:
             end = time.time()
@@ -162,7 +195,7 @@ def run():
 
         git_failure_type = get_git_failure_type(ansible_result)
 
-        sensu_status = SENSU_OK if process.returncode == 0 else SENSU_CRITICAL
+        sensu_status = SENSU_OK if ansible_process.returncode == 0 else SENSU_CRITICAL
 
         # Delete and try again if Git failed on the first run
         if git_failure_type and first_run:
@@ -183,7 +216,7 @@ def run():
             status=sensu_status, summary=summary, enabled=args.notify_sensu
         )
 
-        return_code = process.returncode
+        return_code = ansible_process.returncode
 
         first_run = False
 
@@ -196,9 +229,12 @@ def enqueue_output(out, queue):
 
         for line in iter(out.readline, b""):
             if first_time:
-                logger.debug("Logging Thread[%s] queueing output...", os.getpid())
+                logger.debug(
+                    "Logging Thread[%s] First time queueing output...", os.getpid()
+                )
                 first_time = False
 
+            logger.debug("Logging Thread[%s] queueing output: '%s'", os.getpid(), line)
             queue.put(line)
 
     except ShutdownException:

@@ -32,9 +32,9 @@ def get_args():
         "--timeout",
         dest="timeout",
         action="store",
-        default=1200,
+        default=30,
         type=int,
-        help="Ansible Pull run timeout in seconds. " + "[1200]",
+        help="Ansible Pull run timeout in seconds. " + "[30]",
     )
 
     parser.add_argument(

@@ -8,9 +8,9 @@ import shutil
 import sys
 
 from datetime import timedelta
-from multiprocessing import Process
+from multiprocessing import JoinableQueue, Process
 from tendo.singleton import SingleInstance, SingleInstanceException
-from queue import Queue, Empty
+from queue import Empty
 
 from run_ansible_pull.ansible import get_ansible_cmd, get_ansible_result
 from run_ansible_pull.args import get_args
@@ -28,6 +28,7 @@ from run_ansible_pull.system import (
     clean_tmp_dir,
     register_signal_handlers,
     ShutdownException,
+    subprocess_popen_pipe_output,
 )
 
 logger = logging.getLogger(logger_label)
@@ -73,13 +74,13 @@ def run():
                 git_branch,
             )
             logger.info("Running Ansible command: %s", " ".join(ansible_cmd))
-            ansible_process = subprocess.Popen(
-                ansible_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-            )
+            ansible_process = subprocess_popen_pipe_output(ansible_cmd)
             logger.info("Started Ansible process with PID: %s", ansible_process.pid)
 
-            queue = Queue()
-            logger_process = Process(target=enqueue_output, args=(ansible_process.stdout, queue))
+            queue = JoinableQueue()
+            logger_process = Process(
+                target=enqueue_output, args=(ansible_process.stdout, queue)
+            )
             logger_process.start()
 
             ansible_output = ""
@@ -127,28 +128,38 @@ def run():
             loop_ender = LoopEnder(ansible_process, start_time, args.timeout)
 
             while loop_ender.keep_going():
-                line = None
+                line, lines = "", []
                 try:
-                    line = queue.get(block=False)
+                    while line is not None:
+                        logger.debug("queue size: %s", queue.qsize())
+                        line = queue.get(block=False)
+                        lines.append(line)
+                        queue.task_done()
+                        logger.debug(
+                            "got_from_queue: [%s]: %s", type(line), bytes(line, "utf8")
+                        )
                 except Empty:
-                    pass
+                    logger.debug("Queue: Empty exception caught.")
                 else:
-                    queue.task_done()
+                    logger.debug("Queue: No exceptions caught.")
 
-                if line is not None:
-                    line = line.decode("utf-8")
+                for line in lines:
                     logger.info(line.rstrip())
                     ansible_output += line
                 else:
                     time.sleep(0.1)
 
             try:
-                return_code = ansible_process.wait(0)
+                stdout_output, error_data = ansible_process.communicate()
+                ansible_output += stdout_output
+                return_code = ansible_process.returncode
             except subprocess.TimeoutExpired:
                 return_code = None
 
         except ShutdownException as e:
-            logger.error("Ansible Pull result: Interrupted. PID[%s]", ansible_process.pid)
+            logger.error(
+                "Ansible Pull result: Interrupted. PID[%s]", ansible_process.pid
+            )
             kill_softly(ansible_process)
             sys.exit(e.signal)
         else:
@@ -224,21 +235,29 @@ def run():
 
 
 def enqueue_output(out, queue):
+    logger.debug("enqueue_output: type(out): %s", type(out))
+
     try:
         first_time = True
 
-        for line in iter(out.readline, b""):
+        for line in iter(out.readline, ""):
+            clean_line = line.rstrip()
             if first_time:
                 logger.debug(
                     "Logging Thread[%s] First time queueing output...", os.getpid()
                 )
                 first_time = False
 
-            logger.debug("Logging Thread[%s] queueing output: '%s'", os.getpid(), line)
-            queue.put(line)
+            logger.debug(
+                "Logging Thread[%s] queueing (size=%s) output: [%s] '%s'",
+                os.getpid(),
+                queue.qsize(),
+                type(clean_line),
+                bytes(clean_line, "utf8"),
+            )
+            queue.put(clean_line)
 
     except ShutdownException:
-        logger.info("Shutting down enqueue_output() loop")
+        logger.info("Received `ShutdownException`, ending enqueue_output() loop")
     finally:
-        logger.debug("Logging Thread[%s] hit Empty, quitting...", os.getpid())
-        out.close()
+        logger.debug("Logging Thread[%s] Ran out of output, quitting...", os.getpid())

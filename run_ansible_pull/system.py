@@ -3,6 +3,8 @@ import logging
 import os
 import shutil
 import signal
+import subprocess
+import sys
 import time
 
 import psutil
@@ -11,6 +13,22 @@ from psutil import NoSuchProcess, ZombieProcess
 from run_ansible_pull.logger import logger_label
 
 logger = logging.getLogger(logger_label)
+
+
+def subprocess_popen_pipe_output(cmd):
+    kwargs_line_buffered = dict(bufsize=1)
+    if sys.hexversion >= 0x3070000:
+        # "text" was added as a keyword argument alias for "universal_newlines"
+        # in Python 3.7, and "universal_newlines" is provided still only for
+        # backwards compatibility. Let's do this right if we're going to do it.
+        kwargs_line_buffered = {**dict(text=True), **kwargs_line_buffered}
+    else:
+        # For systems with python before 3.7, use "universal_newlines"
+        kwargs_line_buffered = {**dict(universal_newlines=True), **kwargs_line_buffered}
+
+    return subprocess.Popen(
+        cmd, **kwargs_line_buffered, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    )
 
 
 def kill_softly(parent_popen):

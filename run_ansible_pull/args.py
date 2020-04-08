@@ -7,10 +7,25 @@ def get_args():
     parser = argparse.ArgumentParser(description="Runs Ansible Pull.")
 
     class OSPathExpandUserAction(argparse.Action):
-        def __call__(self, _parser, _args, values, option_string=None):
-            setattr(_args, self.dest, os.path.expanduser(values))
+        @staticmethod
+        def expanduser_preserve_prefix(string, prefix):
+            stripped = string.lstrip(prefix)
+            leading = "" if string == stripped else prefix
+            return f"{leading}{os.path.expanduser(stripped)}"
 
-    store_expanduser = OSPathExpandUserAction
+        @staticmethod
+        def parse(value):
+            paths = [value] if type(value) is not list else value
+            result = [
+                OSPathExpandUserAction.expanduser_preserve_prefix(path, "@")
+                for path in paths
+            ]
+            return result[0] if type(value) is not list else result
+
+        def __call__(self, _parser, _args, values, option_string=None):
+            setattr(_args, self.dest, OSPathExpandUserAction.parse(values))
+
+    store_expand_home_dir_alias = OSPathExpandUserAction
 
     parser.add_argument(
         "--debug",
@@ -61,7 +76,7 @@ def get_args():
     parser.add_argument(
         "--directory",
         dest="work_dir",
-        action=store_expanduser,
+        action=store_expand_home_dir_alias,
         type=str,
         default="/var/lib/ansible/local",
         help="The working directory to store files. " + "[/var/lib/ansible/local]",
@@ -70,16 +85,25 @@ def get_args():
     parser.add_argument(
         "--vault-password-file",
         dest="vault_pass_file",
-        action=store_expanduser,
+        action=store_expand_home_dir_alias,
         type=str,
         default=None,
         help="The Ansible Vault password file. " + "[None]",
     )
 
     parser.add_argument(
+        "--extra-vars",
+        dest="extra_vars",
+        action=store_expand_home_dir_alias,
+        type=str,
+        default=None,
+        help="The extra variables to pass on to Ansible Pull. " + "[None]",
+    )
+
+    parser.add_argument(
         "--checkout",
         dest="branch",
-        action=store_expanduser,
+        action=store_expand_home_dir_alias,
         type=str,
         default=None,
         help="The branch to check out." + "[None]",
@@ -88,7 +112,7 @@ def get_args():
     parser.add_argument(
         "--log-file",
         dest="log_file",
-        action=store_expanduser,
+        action=store_expand_home_dir_alias,
         type=str,
         default=sys.stdout,
         help="The file to log to. " + "[stdout]",

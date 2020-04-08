@@ -69,6 +69,7 @@ def run():
                 args.work_dir,
                 args.git_repo_url,
                 args.vault_pass_file,
+                args.extra_vars,
                 args.tags,
                 args.playbook_path,
                 git_branch,

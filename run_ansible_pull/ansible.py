@@ -3,8 +3,10 @@ import json
 import re
 
 
-def get_ansible_cmd(work_dir, repo_url, vault_pass_file, tags, playbook_path, branch):
-    ansible_command = filter(
+def get_ansible_cmd(
+    work_dir, repo_url, vault_pass_file, extra_vars, tags, playbook_path, branch
+):
+    ansible_command_filtered = filter(
         None,
         [
             ["ansible-pull"],
@@ -12,6 +14,7 @@ def get_ansible_cmd(work_dir, repo_url, vault_pass_file, tags, playbook_path, br
             ["--directory", work_dir],
             ["--url", repo_url],
             ["--vault-password-file", vault_pass_file] if vault_pass_file else [],
+            ["--extra-vars", extra_vars] if extra_vars else [],
             ["--checkout", branch],
             ["--accept-host-key"],
             ["--tags", tags] if tags else [],
@@ -20,9 +23,7 @@ def get_ansible_cmd(work_dir, repo_url, vault_pass_file, tags, playbook_path, br
     )
 
     # Flatten
-    ansible_command = list(itertools.chain(*ansible_command))
-
-    return ansible_command
+    return list(itertools.chain(*ansible_command_filtered))
 
 
 def get_ansible_result(ansible_log):

@@ -119,6 +119,14 @@ def get_args():
     )
 
     parser.add_argument(
+        "--only-if-changed",
+        dest="only_if_changed",
+        action="store_true",
+        default=False,
+        help="Only run the playbook if the repository has been updated. [False]",
+    )
+
+    parser.add_argument(
         "--tags",
         dest="tags",
         action="store",

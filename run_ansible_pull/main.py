@@ -71,6 +71,7 @@ def run():
                 args.vault_pass_file,
                 args.extra_vars,
                 args.tags,
+                args.only_if_changed,
                 args.playbook_path,
                 git_branch,
             )

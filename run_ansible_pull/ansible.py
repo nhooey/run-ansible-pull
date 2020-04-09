@@ -4,7 +4,7 @@ import re
 
 
 def get_ansible_cmd(
-    work_dir, repo_url, vault_pass_file, extra_vars, tags, playbook_path, branch
+    work_dir, repo_url, vault_pass_file, extra_vars, tags, only_if_changed, playbook_path, branch
 ):
     ansible_command_filtered = filter(
         None,
@@ -18,6 +18,7 @@ def get_ansible_cmd(
             ["--checkout", branch],
             ["--accept-host-key"],
             ["--tags", tags] if tags else [],
+            ["--only-if-changed"] if only_if_changed else [],
             [playbook_path],
         ],
     )

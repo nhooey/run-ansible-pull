@@ -39,6 +39,7 @@ def format_sensu_summary(ansible_result, runtime):
     play_failure = None
     if (
         ansible_result.get("play_failure")
+        and ansible_result.get("play_recap")
         and ansible_result["play_recap"]["failed_count"] > 0
     ):
         x = ansible_result["play_failure"]

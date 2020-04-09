@@ -1,4 +1,5 @@
 import atexit
+import fcntl
 import logging
 import os
 import shutil
@@ -13,6 +14,18 @@ from psutil import NoSuchProcess, ZombieProcess
 from run_ansible_pull.logger import logger_label
 
 logger = logging.getLogger(logger_label)
+
+
+def instance_already_running():
+    lockfile = os.open("/tmp/run-ansible-pull.lock", os.O_WRONLY)
+
+    try:
+        fcntl.lockf(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        already_running = False
+    except IOError:
+        already_running = True
+
+    return already_running
 
 
 def subprocess_popen_pipe_output(cmd):

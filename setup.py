@@ -17,7 +17,6 @@ setup(
     install_requires=[
         'ConcurrentLogHandler',
         'psutil',
-        'tendo == 0.2.15',
         'PyYAML',
     ],
 )

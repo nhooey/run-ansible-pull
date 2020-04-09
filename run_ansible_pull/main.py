@@ -9,7 +9,6 @@ import sys
 
 from datetime import timedelta
 from multiprocessing import JoinableQueue, Process
-from tendo.singleton import SingleInstance, SingleInstanceException
 from queue import Empty
 
 from run_ansible_pull.ansible import get_ansible_cmd, get_ansible_result
@@ -29,6 +28,7 @@ from run_ansible_pull.system import (
     register_signal_handlers,
     ShutdownException,
     subprocess_popen_pipe_output,
+    instance_already_running,
 )
 
 logger = logging.getLogger(logger_label)
@@ -39,15 +39,13 @@ def run():
     set_logging_config(args.debug, args.log_file)
     git_branch = get_git_branch()
 
-    try:
-        SingleInstance()
-    except SingleInstanceException:
-        logger.error("Instance already running, quitting.")
+    if instance_already_running():
         send_sensu_event(
             status=SENSU_WARNING,
             summary="Instance already running.",
             enabled=args.notify_sensu,
         )
+        logger.error("Instance already running, quitting.")
         sys.exit(-1)
 
     register_signal_handlers(logger)

@@ -17,7 +17,7 @@ logger = logging.getLogger(logger_label)
 
 
 def instance_already_running():
-    lockfile = os.open("/tmp/run-ansible-pull.lock", os.O_WRONLY)
+    lockfile = os.open("/tmp/run-ansible-pull.lock", os.O_CREAT | os.O_WRONLY)
 
     try:
         fcntl.lockf(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)

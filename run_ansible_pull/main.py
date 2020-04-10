@@ -72,6 +72,8 @@ def run():
                 args.only_if_changed,
                 args.playbook_path,
                 git_branch,
+                args.inventory,
+                args.connection,
             )
             logger.info("Running Ansible command: %s", " ".join(ansible_cmd))
             ansible_process = subprocess_popen_pipe_output(ansible_cmd)

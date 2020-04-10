@@ -4,18 +4,29 @@ import re
 
 
 def get_ansible_cmd(
-    work_dir, repo_url, vault_pass_file, extra_vars, tags, only_if_changed, playbook_path, branch
+    work_dir,
+    repo_url,
+    vault_pass_file,
+    extra_vars,
+    tags,
+    only_if_changed,
+    playbook_path,
+    branch,
+    inventory,
+    connection,
 ):
     ansible_command_filtered = filter(
         None,
         [
             ["ansible-pull"],
-            ["--inventory", "localhost,"],
+            ["--inventory", inventory] if inventory else [],
             ["--directory", work_dir],
             ["--url", repo_url],
             ["--vault-password-file", vault_pass_file] if vault_pass_file else [],
             ["--extra-vars", extra_vars] if extra_vars else [],
             ["--checkout", branch],
+            ["--inventory", inventory] if inventory else [],
+            ["--connection", connection] if connection else [],
             ["--accept-host-key"],
             ["--tags", tags] if tags else [],
             ["--only-if-changed"] if only_if_changed else [],

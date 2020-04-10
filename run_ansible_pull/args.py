@@ -110,6 +110,27 @@ def get_args():
     )
 
     parser.add_argument(
+        "--inventory",
+        dest="inventory",
+        action="store",
+        type=str,
+        default='localhost,',
+        help=(
+            "The inventory file or comma-separated list of hosts to apply the playbook to."
+            + " Ensure that a single host has a trailing comma."
+        ),
+    )
+
+    parser.add_argument(
+        "--connection",
+        dest="connection",
+        action="store",
+        type=str,
+        default="local",
+        help="The connection type to use. [local]",
+    )
+
+    parser.add_argument(
         "--log-file",
         dest="log_file",
         action=store_expand_home_dir_alias,
